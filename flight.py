@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Configure the app
-st.set_page_config(page_title="Flight Price Prediction", layout="wide")
+st.set_page_config(page_title="Flights", layout="wide")
 
 # Initialize session state for the uploaded file
 if "uploaded_file" not in st.session_state:
