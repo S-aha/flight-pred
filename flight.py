@@ -4,18 +4,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Define the app structure
+# Configure the app
 st.set_page_config(page_title="Flight Price Prediction", layout="wide")
 
-# Home tab: Upload dataset
-st.title("Flight Price Prediction App")
+# Initialize session state for the uploaded file
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
+
+# Sidebar navigation
 st.sidebar.header("Navigation")
 tabs = st.sidebar.radio("Choose a section", ["Home", "Prediction", "Comparison"])
 
+# Home tab: Upload dataset
 if tabs == "Home":
+    st.title("Flight Price Prediction App")
     st.header("Upload Your Dataset")
     uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
     if uploaded_file:
+        st.session_state.uploaded_file = uploaded_file  # Save to session state
         data = pd.read_csv(uploaded_file)
         st.write("Dataset Preview:")
         st.dataframe(data.head())
@@ -31,6 +37,7 @@ if tabs == "Home":
         st.write("Sample Data with 'Departure_Date':")
         st.dataframe(data[["Departure_Date"]].head())
 
+# Prediction tab
 elif tabs == "Prediction":
     st.header("Predict Flight Prices")
     st.write("Enter your travel details below for prediction:")
@@ -59,18 +66,12 @@ elif tabs == "Prediction":
         predicted_price = np.random.randint(3000, 15000)
         st.success(f"Predicted Flight Price: ₹{predicted_price}")
 
+# Comparison tab
 elif tabs == "Comparison":
     st.header("Compare Flight Prices Across Airlines")
-    if uploaded_file:
-        # Assume the uploaded dataset has relevant price and airline data
-        data = pd.read_csv(uploaded_file)
-        if "Airline" in data.columns and "Price" in data.columns:
-            st.write("Price Comparison by Airline")
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.boxplot(x="Airline", y="Price", data=data, ax=ax)
-            ax.set_title("Flight Price Distribution Across Airlines")
-            st.pyplot(fig)
-        else:
-            st.error("Dataset must contain 'Airline' and 'Price' columns for comparison.")
-    else:
-        st.warning("Upload a dataset to enable comparison.")
+    if st.session_state.uploaded_file:
+        # Use the uploaded dataset from session 
+
+       
+       
+    
