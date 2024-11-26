@@ -99,6 +99,37 @@ elif tabs == "Comparison":
     else:
         st.warning("Please upload a dataset in the Home section to enable comparison.")
 
+# Comparison tab
+elif tabs == "Comparison":
+    st.header("Compare Flight Prices Across Airlines")
+
+    if st.session_state.uploaded_file:
+        try:
+            # Load the uploaded dataset
+            data = pd.read_csv(st.session_state.uploaded_file)
+            
+            # Standardize column names to lowercase
+            data.columns = data.columns.str.lower()
+            
+            # Check if required columns exist
+            if "airline" in data.columns and "price" in data.columns:
+                st.write("Price Comparison by Airline")
+                
+                # Create a boxplot for price comparison
+                fig, ax = plt.subplots(figsize=(10, 6))
+                sns.boxplot(x="airline", y="price", data=data, ax=ax)
+                ax.set_title("Flight Price Distribution Across Airlines")
+                st.pyplot(fig)
+            else:
+                # Inform the user about missing columns
+                missing_cols = [col for col in ["airline", "price"] if col not in data.columns]
+                st.error(f"The dataset is missing required columns: {', '.join(missing_cols)}.")
+        except pd.errors.EmptyDataError:
+            st.error("The uploaded file is empty. Please upload a valid CSV file.")
+        except Exception as e:
+            st.error(f"An error occurred while processing the file: {e}")
+    else:
+        st.warning("Please upload a dataset in the Home section to enable comparison.")
 
 
 
