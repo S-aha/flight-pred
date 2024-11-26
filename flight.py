@@ -75,29 +75,6 @@ elif tabs == "Prediction":
         predicted_price = np.random.randint(3000, 15000)
         st.success(f"Predicted Flight Price: ₹{predicted_price}")
 
-# Comparison tab
-elif tabs == "Comparison":
-    st.header("Compare Flight Prices Across Airlines")
-    
-    if st.session_state.uploaded_file:
-        # Use the uploaded dataset from session state
-        try:
-            data = pd.read_csv(st.session_state.uploaded_file)
-            
-            if "airline" in data.columns and "price" in data.columns:
-                st.write("price Comparison by airline")
-                fig, ax = plt.subplots(figsize=(10, 6))
-                sns.boxplot(x="airline", y="price", data=data, ax=ax)
-                ax.set_title("Flight Price Distribution Across Airlines")
-                st.pyplot(fig)
-            else:
-                st.error("Dataset must contain 'airline' and 'price' columns for comparison.")
-        except pd.errors.EmptyDataError:
-            st.error("The uploaded file is empty. Please upload a valid CSV file.")
-        except Exception as e:
-            st.error(f"An error occurred while processing the file: {e}")
-    else:
-        st.warning("Please upload a dataset in the Home section to enable comparison.")
 
 # Comparison tab
 elif tabs == "Comparison":
