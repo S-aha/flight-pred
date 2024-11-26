@@ -71,6 +71,17 @@ elif tabs == "Comparison":
     st.header("Compare Flight Prices Across Airlines")
     if st.session_state.uploaded_file:
         # Use the uploaded dataset from session 
+        data = pd.read_csv(st.session_state.uploaded_file)
+        if "Airline" in data.columns and "Price" in data.columns:
+            st.write("Price Comparison by Airline")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.boxplot(x="Airline", y="Price", data=data, ax=ax)
+            ax.set_title("Flight Price Distribution Across Airlines")
+            st.pyplot(fig)
+        else:
+            st.error("Dataset must contain 'Airline' and 'Price' columns for comparison.")
+    else:
+        st.warning("Please upload a dataset in the Home section to enable comparison.")
 
        
        
