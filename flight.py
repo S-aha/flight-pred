@@ -83,6 +83,68 @@ elif tabs == "Comparison":
     else:
         st.warning("Please upload a dataset in the Home section to enable comparison.")
 
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+
+# Load data
+@st.cache
+def load_data():
+    return pd.read_csv("Clean_Dataset.csv")
+
+# Categorize flights
+def categorize_flights(data):
+    data['Departure_Hour'] = pd.to_datetime(data['Departure_Time']).dt.hour
+    data['Shift'] = data['Departure_Hour'].apply(lambda x: 'Morning' if 6 <= x < 18 else 'Evening')
+    return data
+
+# Price categorization for calendar
+def categorize_price(data):
+    price_bins = pd.qcut(data['Price'], q=3, labels=['Low', 'Moderate', 'High'])
+    data['Price_Category'] = price_bins
+    return data
+
+# Streamlit App
+def main():
+    st.title("Flight Price Prediction")
+    st.sidebar.title("Flight Price Analysis")
+
+    # Load and preprocess data
+    data = load_data()
+    data = categorize_flights(data)
+    data = categorize_price(data)
+
+    # Display dataset
+    if st.sidebar.checkbox("Show Dataset"):
+        st.write(data)
+
+    # Early bird vs. last-minute
+    st.header("Early Bird vs. Last-Minute Pricing")
+    days_to_departure = (pd.to_datetime(data['Departure_Date']) - datetime.now()).dt.days
+    data['Booking_Category'] = days_to_departure.apply(lambda x: 'Early Bird' if x > 30 else 'Last Minute')
+    booking_stats = data.groupby('Booking_Category')['Price'].mean()
+    st.bar_chart(booking_stats)
+
+    # Flight price comparison
+    st.header("Flight Price Comparison by Airline")
+    airline_stats = data.groupby('Airline')['Price'].mean().sort_values()
+    st.bar_chart(airline_stats)
+
+    # Morning vs. Evening Shifts
+    st.header("Shift Analysis (Morning vs. Evening)")
+    shift_stats = data.groupby('Shift')['Price'].mean()
+    st.bar_chart(shift_stats)
+
+    # Calendar visualization
+    st.header("Price Calendar")
+    calendar_data = data[['Departure_Date', 'Price_Category']].drop_duplicates()
+    calendar_chart_data = calendar_data.pivot_table(index='Departure_Date', columns='Price_Category', aggfunc='size', fill_value=0)
+    st.line_chart(calendar_chart_data)
+
+if __name__ == "__main__":
+    main()
 
 
 
