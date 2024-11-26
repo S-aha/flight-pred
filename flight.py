@@ -3,99 +3,74 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from datetime import datetime
-from textblob import TextBlob  # For sentiment analysis
 
-# Load data
-@st.cache
-def load_data():
-    data = pd.read_csv("flights.csv")
-    # Adding simulated ratings and reviews
-    data['Ratings'] = np.random.randint(1, 6, size=len(data))  # Ratings: 1 to 5
-    data['Reviews'] = np.random.choice(
-        ["Great experience", "Average service", "Not worth the price",
-         "Excellent value for money", "Poor customer support"], len(data)
-    )
-    # Simulate additional costs
-    data['Baggage_Fee'] = np.random.randint(0, 51, size=len(data))  # $0 - $50
-    data['Seat_Selection_Fee'] = np.random.randint(0, 21, size=len(data))  # $0 - $20
-    return data
+# Define the app structure
+st.set_page_config(page_title="Flight Price Prediction", layout="wide")
 
-# Categorize flights
-def categorize_flights(data):
-    data['Departure_Hour'] = pd.to_datetime(data['Departure_Time']).dt.hour
-    data['Shift'] = data['Departure_Hour'].apply(lambda x: 'Morning' if 6 <= x < 18 else 'Evening')
-    return data
+# Home tab: Upload dataset
+st.title("Flight Price Prediction App")
+st.sidebar.header("Navigation")
+tabs = st.sidebar.radio("Choose a section", ["Home", "Prediction", "Comparison"])
 
-# Dynamic filters
-def filter_data(data, airline, shift, departure_city, destination_city, price_range):
-    filtered_data = data[
-        (data['Airline'] == airline if airline else True) &
-        (data['Shift'] == shift if shift else True) &
-        (data['Departure_City'] == departure_city if departure_city else True) &
-        (data['Destination_City'] == destination_city if destination_city else True) &
-        (data['Price'] >= price_range[0]) & (data['Price'] <= price_range[1])
-    ]
-    return filtered_data
+if tabs == "Home":
+    st.header("Upload Your Dataset")
+    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    if uploaded_file:
+        data = pd.read_csv(uploaded_file)
+        st.write("Dataset Preview:")
+        st.dataframe(data.head())
+        st.write("Dataset Shape:", data.shape)
 
-# Sentiment analysis
-def sentiment_analysis(reviews):
-    sentiments = [TextBlob(review).sentiment.polarity for review in reviews]
-    return ["Positive" if sentiment > 0 else "Negative" if sentiment < 0 else "Neutral" for sentiment in sentiments]
+        # Preprocessing sample
+        st.subheader("Preprocessing Insights")
+        if "Departure_Date" not in data.columns:
+            st.warning("Adding a simulated 'Departure_Date' column.")
+            data["Departure_Date"] = pd.to_datetime(
+                np.random.choice(pd.date_range("2023-12-01", "2024-01-31"), len(data))
+            )
+        st.write("Sample Data with 'Departure_Date':")
+        st.dataframe(data[["Departure_Date"]].head())
 
-# Streamlit App
-def main():
-    st.title("Advanced Flight Price Prediction and Analysis")
-    st.sidebar.title("Filters and Options")
+elif tabs == "Prediction":
+    st.header("Predict Flight Prices")
+    st.write("Enter your travel details below for prediction:")
+    
+    # Input fields for user data
+    booking_date = st.date_input("Booking Date")
+    departure_date = st.date_input("Departure Date")
+    num_passengers = st.number_input("Number of Passengers", min_value=1, step=1)
+    
+    # Traveler categorization
+    if booking_date and departure_date:
+        days_diff = (departure_date - booking_date).days
+        if days_diff > 60:
+            category = "Early Bird"
+        elif 30 < days_diff <= 60:
+            category = "Planner"
+        elif 7 < days_diff <= 30:
+            category = "Last Minute Planner"
+        else:
+            category = "Spontaneous Traveler"
+        st.write(f"Traveler Type: **{category}**")
 
-    # Load data
-    data = load_data()
-    data = categorize_flights(data)
+    # Prediction button
+    if st.button("Predict Price"):
+        # Dummy prediction logic (replace with actual model predictions)
+        predicted_price = np.random.randint(3000, 15000)
+        st.success(f"Predicted Flight Price: ₹{predicted_price}")
 
-    # Sidebar filters
-    airlines = st.sidebar.selectbox("Select Airline", options=[None] + list(data['Airline'].unique()))
-    shift = st.sidebar.selectbox("Select Flight Shift", options=[None, "Morning", "Evening"])
-    departure_city = st.sidebar.selectbox("Select Departure City", options=[None] + list(data['Departure_City'].unique()))
-    destination_city = st.sidebar.selectbox("Select Destination City", options=[None] + list(data['Destination_City'].unique()))
-    price_range = st.sidebar.slider("Select Price Range", int(data['Price'].min()), int(data['Price'].max()), (int(data['Price'].min()), int(data['Price'].max())))
-
-    # Filter data based on selections
-    filtered_data = filter_data(data, airlines, shift, departure_city, destination_city, price_range)
-    st.write(f"### Filtered Results ({len(filtered_data)} flights)")
-    st.write(filtered_data)
-
-    # Ratings and reviews
-    st.header("Airline Ratings and Reviews")
-    avg_ratings = filtered_data.groupby('Airline')['Ratings'].mean().sort_values()
-    st.bar_chart(avg_ratings)
-    filtered_data['Sentiment'] = sentiment_analysis(filtered_data['Reviews'])
-    st.write("Sentiments of Reviews:")
-    st.write(filtered_data[['Airline', 'Reviews', 'Sentiment']])
-
-    # Additional costs visualization
-    st.header("Additional Costs Breakdown")
-    additional_costs = filtered_data[['Airline', 'Baggage_Fee', 'Seat_Selection_Fee']].groupby('Airline').mean()
-    st.bar_chart(additional_costs)
-
-    # Personalized recommendations
-    st.header("Personalized Recommendations")
-    cheapest_flight = filtered_data.loc[filtered_data['Price'].idxmin()] if not filtered_data.empty else None
-    if cheapest_flight is not None:
-        st.subheader("Cheapest Flight")
-        st.write(f"**Airline**: {cheapest_flight['Airline']}")
-        st.write(f"**Price**: ${cheapest_flight['Price']}")
-        st.write(f"**Shift**: {cheapest_flight['Shift']}")
-        st.write(f"**Departure City**: {cheapest_flight['Departure_City']}")
-        st.write(f"**Destination City**: {cheapest_flight['Destination_City']}")
+elif tabs == "Comparison":
+    st.header("Compare Flight Prices Across Airlines")
+    if uploaded_file:
+        # Assume the uploaded dataset has relevant price and airline data
+        data = pd.read_csv(uploaded_file)
+        if "Airline" in data.columns and "Price" in data.columns:
+            st.write("Price Comparison by Airline")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.boxplot(x="Airline", y="Price", data=data, ax=ax)
+            ax.set_title("Flight Price Distribution Across Airlines")
+            st.pyplot(fig)
+        else:
+            st.error("Dataset must contain 'Airline' and 'Price' columns for comparison.")
     else:
-        st.write("No flights available with the current filters.")
-
-    # Seasonal insights
-    st.header("Seasonal Insights")
-    seasonal_data = data.copy()
-    seasonal_data['Month'] = pd.to_datetime(seasonal_data['Departure_Date']).dt.month
-    avg_monthly_price = seasonal_data.groupby('Month')['Price'].mean()
-    st.line_chart(avg_monthly_price)
-
-if __name__ == "__main__":
-    main()
+        st.warning("Upload a dataset to enable comparison.")
