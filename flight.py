@@ -83,6 +83,8 @@ elif tabs == "Comparison":
     else:
         st.warning("Please upload a dataset in the Home section to enable comparison.")
 
-       
+
+
+
        
     
