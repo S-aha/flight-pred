@@ -9,7 +9,7 @@ from textblob import TextBlob  # For sentiment analysis
 # Load data
 @st.cache
 def load_data():
-    data = pd.read_csv("Clean_Dataset.csv")
+    data = pd.read_csv("flights.csv")
     # Adding simulated ratings and reviews
     data['Ratings'] = np.random.randint(1, 6, size=len(data))  # Ratings: 1 to 5
     data['Reviews'] = np.random.choice(
