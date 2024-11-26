@@ -19,7 +19,7 @@ tabs = st.sidebar.radio("Choose a section", ["Home", "Prediction", "Comparison"]
 if tabs == "Home":
     st.title("Flight Price Prediction App")
     st.header("Upload Your Dataset")
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    uploaded_file = st.file_uploader("Flights", type=["csv"])
     
     if uploaded_file:
         # Save the uploaded file to session state
@@ -27,7 +27,7 @@ if tabs == "Home":
 
         # Read the uploaded CSV file into a DataFrame
         try:
-            data = pd.read_csv(uploaded_file)
+            data = pd.read_csv(Flights)
             st.write("Dataset Preview:")
             st.dataframe(data.head())
             st.write("Dataset Shape:", data.shape)
