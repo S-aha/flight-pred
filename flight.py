@@ -108,6 +108,21 @@ elif tabs == "Comparison":
     else:
         st.warning("Please upload a dataset in the Home section to enable comparison.")
 
+st.write("Uploaded file type:", st.session_state.uploaded_file.type)
+st.write("Uploaded file name:", st.session_state.uploaded_file.name)
+if st.session_state.uploaded_file:
+    # Read the uploaded file content into memory
+    try:
+        data = pd.read_csv(st.session_state.uploaded_file)
+        st.write("Dataset loaded successfully!")
+    except pd.errors.EmptyDataError:
+        st.error("The uploaded CSV file is empty.")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+if data.empty:
+    st.error("The uploaded CSV file does not contain any data.")
+else:
+    st.write("Dataset preview:", data.head())
 
 
     
