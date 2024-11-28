@@ -1,113 +1,71 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import joblib
 
-# Configure the app
-st.set_page_config(page_title="Flight Price Prediction", layout="wide")
+# Title and description
+st.title("Flight Price Prediction App ✈️")
+st.markdown("Predict the price of your flight by selecting the relevant options below.")
 
-# Initialize session state for the uploaded file
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
+# Load preprocessed data and models
+@st.cache
+def load_model_and_scaler():
+    model = joblib.load('best_regressor.pkl')  # Trained model
+    scaler = joblib.load('scaler.pkl')         # Scaler
+    df_sample = pd.read_csv('Clean_Dataset.csv')  # Dataset for dropdown values
+    return model, scaler, df_sample
 
-# Sidebar navigation
-st.sidebar.header("Navigation")
-tabs = st.sidebar.radio("Choose a section", ["Home", "Prediction", "Comparison"])
+model, scaler, df_sample = load_model_and_scaler()
 
-# Home tab: Upload dataset
-if tabs == "Home":
-    st.title("Flight Price Prediction App")
-    st.header("Upload Your Dataset")
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
-    
-    if uploaded_file:
-        # Save the uploaded file to session state
-        st.session_state.uploaded_file = uploaded_file
+# Dropdown options based on the dataset
+airlines = df_sample['airline'].unique()
+source_cities = df_sample['source_city'].unique()
+destination_cities = df_sample['destination_city'].unique()
+flight_classes = df_sample['class'].unique()
+departure_times = df_sample['departure_time'].unique()
 
-        # Read the uploaded CSV file into a DataFrame
-        try:
-            data = pd.read_csv(uploaded_file)
-            st.write("Dataset Preview:")
-            st.dataframe(data.head())
-            st.write("Dataset Shape:", data.shape)
+# Input fields
+st.sidebar.header("Select Flight Details:")
+selected_airline = st.sidebar.selectbox("Airline", airlines)
+selected_source = st.sidebar.selectbox("Source City", source_cities)
+selected_destination = st.sidebar.selectbox("Destination City", destination_cities)
+selected_class = st.sidebar.selectbox("Class", flight_classes)
+selected_departure_time = st.sidebar.selectbox("Departure Time", departure_times)
 
-            # Preprocessing sample
-            st.subheader("Preprocessing Insights")
-            if "Departure_Date" not in data.columns:
-                st.warning("Adding a simulated 'Departure_Date' column.")
-                data["Departure_Date"] = pd.to_datetime(
-                    np.random.choice(pd.date_range("2023-12-01", "2024-01-31"), len(data))
-                )
-            st.write("Sample Data with 'Departure_Date':")
-            st.dataframe(data[["Departure_Date"]].head())
-        except pd.errors.EmptyDataError:
-            st.error("The uploaded file is empty. Please upload a valid CSV file.")
-        except Exception as e:
-            st.error(f"An error occurred while reading the file: {e}")
+# Numeric inputs
+stops = st.sidebar.slider("Number of Stops", min_value=0, max_value=3, value=1, step=1)
+duration = st.sidebar.slider("Flight Duration (in hours)", min_value=1, max_value=24, value=2)
+days_left = st.sidebar.slider("Days Left for Departure", min_value=1, max_value=365, value=30)
 
-# Prediction tab
-elif tabs == "Prediction":
-    st.header("Predict Flight Prices")
-    st.write("Enter your travel details below for prediction:")
-    
-    # Input fields for user data
-    booking_date = st.date_input("Booking Date")
-    departure_date = st.date_input("Departure Date")
-    num_passengers = st.number_input("Number of Passengers", min_value=1, step=1)
-    
-    # Traveler categorization
-    if booking_date and departure_date:
-        days_diff = (departure_date - booking_date).days
-        if days_diff > 60:
-            category = "Early Bird"
-        elif 30 < days_diff <= 60:
-            category = "Planner"
-        elif 7 < days_diff <= 30:
-            category = "Last Minute Planner"
-        else:
-            category = "Spontaneous Traveler"
-        st.write(f"Traveler Type: **{category}**")
+# Prepare the input for prediction
+input_data = {
+    'airline': selected_airline,
+    'source_city': selected_source,
+    'destination_city': selected_destination,
+    'class': selected_class,
+    'departure_time': selected_departure_time,
+    'stops': stops,
+    'duration': duration,
+    'days_left': days_left
+}
 
-    # Prediction button
-    if st.button("Predict Price"):
-        # Dummy prediction logic (replace with actual model predictions)
-        predicted_price = np.random.randint(3000, 15000)
-        st.success(f"Predicted Flight Price: ₹{predicted_price}")
+# Convert to DataFrame for processing
+input_df = pd.DataFrame([input_data])
 
+# One-hot encode the categorical features (align with the training process)
+categorical_features = ['airline', 'source_city', 'destination_city', 'class', 'departure_time']
+input_df_encoded = pd.get_dummies(input_df, columns=categorical_features)
 
-# Comparison tab
-elif tabs == "Comparison":
-    st.header("Compare Flight Prices Across Airlines")
+# Align the columns with the training dataset
+missing_cols = set(df_sample.columns) - set(input_df_encoded.columns)
+for col in missing_cols:
+    input_df_encoded[col] = 0
+input_df_encoded = input_df_encoded[df_sample.columns]
 
-    if st.session_state.uploaded_file:
-        try:
-            # Load the uploaded dataset
-            data = pd.read_csv(st.session_state.uploaded_file)
-            
-            # Standardize column names to lowercase
-            data.columns = data.columns.str.lower()
-            
-            # Check if required columns exist
-            if "airline" in data.columns and "price" in data.columns:
-                st.write("Price Comparison by Airline")
-                
-                # Create a boxplot for price comparison
-                fig, ax = plt.subplots(figsize=(10, 6))
-                sns.boxplot(x="airline", y="price", data=data, ax=ax)
-                ax.set_title("Flight Price Distribution Across Airlines")
-                st.pyplot(fig)
-            else:
-                # Inform the user about missing columns
-                missing_cols = [col for col in ["airline", "price"] if col not in data.columns]
-                st.error(f"The dataset is missing required columns: {', '.join(missing_cols)}.")
-        except pd.errors.EmptyDataError:
-            st.error("The uploaded file is empty. Please upload a valid CSV file.")
-        except Exception as e:
-            st.error(f"An error occurred while processing the file: {e}")
-    else:
-        st.warning("Please upload a dataset in the Home section to enable comparison.")
+# Scale the input
+input_scaled = scaler.transform(input_df_encoded)
 
-
-
-    
+# Predict the price
+if st.sidebar.button("Predict Price"):
+    predicted_price = model.predict(input_scaled)[0]
+    st.success(f"The predicted flight price is ₹{predicted_price:.2f}")
