@@ -8,7 +8,8 @@ st.markdown("Upload your model, scaler, and dataset, and provide flight details 
 
 # File upload section
 st.sidebar.header("Upload Required Files")
-
+model_file = st.sidebar.file_uploader("Upload the Trained Model (best_regressor.pkl)", type=["pkl"])
+scaler_file = st.sidebar.file_uploader("Upload the Scaler (scaler.pkl)", type=["pkl"])
 dataset_file = st.sidebar.file_uploader("Upload the Dataset (Clean_Dataset.csv)", type=["csv"])
 
 # Load uploaded files
