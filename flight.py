@@ -69,3 +69,24 @@ input_scaled = scaler.transform(input_df_encoded)
 if st.sidebar.button("Predict Price"):
     predicted_price = model.predict(input_scaled)[0]
     st.success(f"The predicted flight price is ₹{predicted_price:.2f}")
+    import os
+import joblib
+import pandas as pd
+
+@st.cache
+def load_model_and_scaler():
+    base_path = os.path.dirname(__file__)  # Get the directory of the script
+    model = joblib.load(os.path.join(base_path, 'best_regressor.pkl'))
+    scaler = joblib.load(os.path.join(base_path, 'scaler.pkl'))
+    df_sample = pd.read_csv(os.path.join(base_path, 'Clean_Dataset.csv'))
+    return model, scaler, df_sample
+    import os
+print(os.getcwd())
+try:
+    model = joblib.load('best_regressor.pkl')
+    scaler = joblib.load('scaler.pkl')
+    df_sample = pd.read_csv('Clean_Dataset.csv')
+except FileNotFoundError as e:
+    st.error(f"File not found: {e.filename}")
+
+
